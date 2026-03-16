@@ -89,17 +89,17 @@ public class LocadoraService {
 
         Locacao locacao = new Locacao(idDvd, idCliente, LocalDate.now());
         locacoesAtivas.put(idDvd, locacao);
-        return new ResultadoOperacao(true, "Locacao realizada com sucesso.");
+        return new ResultadoOperacao(true, "Locacao realizada com sucesso, retornando ao menu inicial.");
     }
 
     public ResultadoOperacao devolverDvd(int idDvd) {
         if (!dvdRepositorio.existePorId(idDvd)) {
-            return new ResultadoOperacao(false, "DVD nao encontrado.");
+            return new ResultadoOperacao(false, "DVD nao encontrado, retornando ao menu inicial.");
         }
 
         Locacao removida = locacoesAtivas.remove(idDvd);
         if (removida == null) {
-            return new ResultadoOperacao(false, "Este DVD ja esta disponivel.");
+            return new ResultadoOperacao(false, "Este DVD ja esta disponivel, retornando ao menu inicial.");
         }
 
         return new ResultadoOperacao(true, "DVD devolvido com sucesso.");

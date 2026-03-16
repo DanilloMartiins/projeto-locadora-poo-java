@@ -42,7 +42,7 @@ public class AplicacaoLocadora {
                 case 7 -> buscarDvdPorTitulo();
                 case 0 -> {
                     executando = false;
-                    System.out.println("Sistema encerrado.");
+                    System.out.println("Sistema encerrado, tchau!!!");
                 }
                 default -> System.out.println("Opcao invalida.");
             }
@@ -54,7 +54,7 @@ public class AplicacaoLocadora {
     }
 
     private void exibirMenu() {
-        System.out.println("=== LOCADORA DE DVDS ===");
+        System.out.println("=== BEM-VINDOS A LOCADORA DE DVDS The Martins's ===");
         System.out.println("1 - Cadastrar DVD");
         System.out.println("2 - Cadastrar Cliente");
         System.out.println("3 - Listar DVDs");
@@ -66,27 +66,66 @@ public class AplicacaoLocadora {
     }
 
     private void cadastrarDvd() {
-        try {
-            System.out.println("Cadastro de DVD");
-            String titulo = lerTexto("Titulo: ");
-            String genero = lerTexto("Genero: ");
-            int anoLancamento = lerInteiro("Ano de lancamento: ");
+        System.out.println("Cadastro de DVD");
+        exibirOpcaoVoltar();
 
-            Dvd dvd = locadoraService.cadastrarDvd(titulo, genero, anoLancamento);
-            System.out.println("DVD cadastrado. ID: " + dvd.id());
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
+        Optional<String> titulo = lerTextoOuVoltar("Titulo: ");
+        if (titulo.isEmpty()) {
+            informarRetornoMenu();
+            return;
+        }
+
+        Optional<String> genero = lerTextoOuVoltar("Genero: ");
+        if (genero.isEmpty()) {
+            informarRetornoMenu();
+            return;
+        }
+
+        while (true) {
+            Optional<Integer> anoLancamento = lerInteiroOuVoltar("Ano de lancamento: ");
+            if (anoLancamento.isEmpty()) {
+                informarRetornoMenu();
+                return;
+            }
+
+            try {
+                Dvd dvd = locadoraService.cadastrarDvd(titulo.get(), genero.get(), anoLancamento.get());
+                System.out.println("DVD cadastrado. ID: " + dvd.id() + ". retornando ao menu inicial.");
+                return;
+            } catch (IllegalArgumentException e) {
+                if ("Ano de lancamento invalido.".equals(e.getMessage())) {
+                    System.out.println("Ano de lancamento invalido. Tente novamente");
+                    continue;
+                }
+                System.out.println(e.getMessage());
+                return;
+            }
         }
     }
 
     private void cadastrarCliente() {
-        try {
-            System.out.println("Cadastro de Cliente");
-            String nome = lerTexto("Nome: ");
-            Cliente cliente = locadoraService.cadastrarCliente(nome);
-            System.out.println("Cliente cadastrado. ID: " + cliente.id());
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
+        System.out.println("Cadastro de Cliente");
+        exibirOpcaoVoltar();
+
+        while (true) {
+            Optional<String> nome = lerTextoOuVoltar("Nome: ");
+            if (nome.isEmpty()) {
+                informarRetornoMenu();
+                return;
+            }
+
+            try {
+                Cliente cliente = locadoraService.cadastrarCliente(nome.get());
+                System.out.println("Cliente cadastrado. ID: " + cliente.id() + ". retornando ao menu inicial.");
+                return;
+            } catch (IllegalArgumentException e) {
+                if ("Nome do cliente deve conter apenas letras e espacos.".equals(e.getMessage())) {
+                    System.out.println("Nome do cliente deve conter apenas letras e espaços, tente novamente.");
+                    continue;
+                }
+                System.out.println(e.getMessage());
+                return;
+            }
         }
     }
 
@@ -95,13 +134,15 @@ public class AplicacaoLocadora {
         System.out.println("Lista de DVDs");
 
         if (dvds.isEmpty()) {
-            System.out.println("Nenhum DVD cadastrado.");
+            System.out.println("Nenhum DVD cadastrado, retornando ao menu inicial.");
             return;
         }
 
         for (Dvd dvd : dvds) {
             exibirDvdComStatus(dvd);
         }
+
+        aguardarVoltarAoMenu();
     }
 
     private void listarClientes() {
@@ -109,36 +150,77 @@ public class AplicacaoLocadora {
         System.out.println("Lista de Clientes");
 
         if (clientes.isEmpty()) {
-            System.out.println("Nenhum cliente cadastrado.");
+            System.out.println("Nenhum cliente cadastrado, retornando ao menu inicial.");
             return;
         }
 
         for (Cliente cliente : clientes) {
             System.out.println("ID: " + cliente.id() + " | Nome: " + cliente.nome());
         }
+
+        aguardarVoltarAoMenu();
     }
 
     private void alugarDvd() {
-        int idDvd = lerInteiro("ID do DVD: ");
-        int idCliente = lerInteiro("ID do cliente: ");
+        exibirOpcaoVoltar();
 
-        ResultadoOperacao resultado = locadoraService.alugarDvd(idDvd, idCliente);
-        System.out.println(resultado.mensagem());
+        while (true) {
+            Optional<Integer> idDvd = lerInteiroOuVoltar("ID do DVD: ");
+            if (idDvd.isEmpty()) {
+                informarRetornoMenu();
+                return;
+            }
+
+            Optional<Integer> idCliente = lerInteiroOuVoltar("ID do cliente: ");
+            if (idCliente.isEmpty()) {
+                informarRetornoMenu();
+                return;
+            }
+
+            ResultadoOperacao resultado = locadoraService.alugarDvd(idDvd.get(), idCliente.get());
+            if (resultado.sucesso()) {
+                System.out.println(resultado.mensagem());
+                return;
+            }
+
+            System.out.println(resultado.mensagem() + " Tente novamente ou digite 0 para voltar ao menu inicial.");
+        }
     }
 
     private void devolverDvd() {
-        int idDvd = lerInteiro("ID do DVD para devolucao: ");
-        ResultadoOperacao resultado = locadoraService.devolverDvd(idDvd);
-        System.out.println(resultado.mensagem());
+        exibirOpcaoVoltar();
+
+        while (true) {
+            Optional<Integer> idDvd = lerInteiroOuVoltar("ID do DVD para devolucao: ");
+            if (idDvd.isEmpty()) {
+                informarRetornoMenu();
+                return;
+            }
+
+            ResultadoOperacao resultado = locadoraService.devolverDvd(idDvd.get());
+            if (resultado.sucesso()) {
+                System.out.println(resultado.mensagem());
+                return;
+            }
+
+            System.out.println(resultado.mensagem() + " Tente novamente ou digite 0 para voltar ao menu inicial.");
+        }
     }
 
     private void buscarDvdPorTitulo() {
-        String trechoTitulo = lerTexto("Digite o titulo ou parte do titulo: ");
-        List<Dvd> encontrados = locadoraService.buscarDvdsPorTitulo(trechoTitulo);
+        exibirOpcaoVoltar();
+
+        Optional<String> trechoTitulo = lerTextoOuVoltar("Digite o titulo ou parte do titulo: ");
+        if (trechoTitulo.isEmpty()) {
+            informarRetornoMenu();
+            return;
+        }
+
+        List<Dvd> encontrados = locadoraService.buscarDvdsPorTitulo(trechoTitulo.get());
         System.out.println("Resultado da busca");
 
         if (encontrados.isEmpty()) {
-            System.out.println("Nenhum DVD encontrado com esse criterio.");
+            System.out.println("Nenhum DVD encontrado com esse criterio, retornando ao menu inicial.");
             return;
         }
 
@@ -154,6 +236,60 @@ public class AplicacaoLocadora {
                 .orElse("Disponivel");
         System.out.println("ID: " + dvd.id() + " | Titulo: " + dvd.titulo() + " | Genero: " + dvd.genero()
                 + " | Ano: " + dvd.anoLancamento() + " | Status: " + status);
+    }
+
+    private void exibirOpcaoVoltar() {
+        System.out.println("Digite 0 para voltar ao menu inicial a qualquer momento.");
+    }
+
+    private void informarRetornoMenu() {
+        System.out.println("Retornando ao menu inicial.");
+    }
+
+    private void aguardarVoltarAoMenu() {
+        exibirOpcaoVoltar();
+        while (true) {
+            String valor = lerTexto("Escolha: ");
+            if ("0".equals(valor)) {
+                informarRetornoMenu();
+                return;
+            }
+            System.out.println("Opcao invalida. Digite 0 para voltar ao menu inicial.");
+        }
+    }
+
+    private Optional<Integer> lerInteiroOuVoltar(String mensagem) {
+        while (true) {
+            System.out.print(mensagem);
+            String valor = scanner.nextLine().trim();
+
+            if ("0".equals(valor)) {
+                return Optional.empty();
+            }
+
+            try {
+                return Optional.of(Integer.parseInt(valor));
+            } catch (NumberFormatException e) {
+                System.out.println("Digite um numero inteiro valido.");
+            }
+        }
+    }
+
+    private Optional<String> lerTextoOuVoltar(String mensagem) {
+        while (true) {
+            System.out.print(mensagem);
+            String valor = scanner.nextLine().trim();
+
+            if ("0".equals(valor)) {
+                return Optional.empty();
+            }
+
+            if (!valor.isEmpty()) {
+                return Optional.of(valor);
+            }
+
+            System.out.println("Campo obrigatorio. Tente novamente.");
+        }
     }
 
     private int lerInteiro(String mensagem) {
